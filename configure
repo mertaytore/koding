@@ -77,6 +77,7 @@ rest = ->
     fs.chmodSync "./run", 0o755
 
     fs.writeFileSync "./deployment/generated_files/supervisord.conf", KONFIG.supervisorConf
+    fs.writeFileSync "./deployment/kubernetes/backend-pod/containers.yaml", KONFIG.kubernetesConf
     fs.writeFileSync "./deployment/generated_files/nginx.conf", KONFIG.nginxConf
     fs.writeFileSync "./nginx.conf", KONFIG.nginxConf
     fs.writeFileSync 'supervisord.conf', KONFIG.supervisorConf

@@ -105,7 +105,12 @@ Configuration = (options = {}) ->
     sh: (require './generateShellEnv').create KONFIG, options
     json: JSON.stringify KONFIG, null, 2
 
+  if not fs.existsSync './deployment/kubernetes/backend-pod' then fs.mkdirSync './deployment/kubernetes/backend-pod'
+
   KONFIG.supervisorConf = (require '../deployment/supervisord.coffee').create KONFIG
+  KONFIG.kubernetesConf = (require '../deployment/kubernetes.coffee').create KONFIG
+  for name, options of KONFIG.workers when options.kubernetes?.ports?
+    fs.writeFileSync "./deployment/kubernetes/backend-pod/#{name}-svc.yaml", (require '../deployment/kubernetes.coffee').createWorkerServices name, options
   KONFIG.nginxConf = (require '../deployment/nginx.coffee').create KONFIG, options.environment
   KONFIG.runFile = (require './generateRunFile').dev KONFIG, options
   KONFIG.configCheckExempt = []

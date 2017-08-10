@@ -114,6 +114,7 @@ Configuration = (options = {}) ->
     json: JSON.stringify KONFIG, null, 2
 
   KONFIG.supervisorConf = (require '../deployment/supervisord.coffee').create KONFIG
+  KONFIG.kubernetesConf = (require '../deployment/kubernetes.coffee').create KONFIG
   KONFIG.nginxConf = (require '../deployment/nginx.coffee').create KONFIG, options.environment
   KONFIG.runFile = (require './generateRunFile').default KONFIG, options
   KONFIG.configCheckExempt = []

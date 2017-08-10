@@ -5,14 +5,55 @@ module.exports = (KONFIG, options, credentials) ->
   GOBIN = '%(ENV_KONFIG_PROJECTROOT)s/go/bin'
   GOPATH = '%(ENV_KONFIG_PROJECTROOT)s/go'
 
+  GOBIN_K8S = "#{KONFIG.projectRoot}/go/bin"
+  GOPATH_K8S = "#{KONFIG.projectRoot}/go"
+
   nodeProgram = if options.watchNode then './watch-node' else 'node'
 
+  socialapiEnvVariables = [
+      {
+        name        : 'KONFIG_REDIS_HOST'
+        value       : '${REDIS_SERVICE_HOST}'
+      }
+      {
+        name        : 'KONFIG_REDIS_URL'
+        value       : '${KONFIG_REDIS_HOST}:6379'
+      }
+      {
+        name        : 'KONFIG_SOCIALAPI_MONGO'
+        value       : '${MONGO_SERVICE_HOST}:27017/koding'
+      }
+      {
+        name        : 'KONFIG_SOCIALAPI_POSTGRES_HOST'
+        value       : '${POSTGRES_SERVICE_HOST}'
+      }
+      {
+        name        : 'KONFIG_SOCIALAPI_MQ_HOST'
+        value       : '${RABBITMQ_SERVICE_HOST}'
+      }
+      {
+        name        : 'KONFIG_SOCIALAPI_MQ_LOGIN'
+        value       : 'test'
+      }
+      {
+        name        : 'KONFIG_SOCIALAPI_MQ_PASSWORD'
+        value       : 'test'
+      }
+    ]
+
   workers =
-    nginx:
-      group: 'external'
-      supervisord:
-        command: 'nginx -c %(ENV_KONFIG_PROJECTROOT)s/nginx.conf'
-        stopsignal: 'QUIT'
+    nginx               :
+      group             : 'external'
+      supervisord       :
+        command         : 'nginx -c %(ENV_KONFIG_PROJECTROOT)s/nginx.conf'
+        stopsignal      : 'QUIT'
+      kubernetes        :
+        image           : 'nginx'
+        command         : " [ \"nginx\", \"-c\", \"#{KONFIG.projectRoot}/nginx.conf\" ] "
+        mounts          : [ 'koding-working-tree', 'assets' ]
+        ports						:
+          containerPort : "#{KONFIG.domains.port}"
+          hostPort      : "#{KONFIG.domains.port}"
 
     bucketproxies       :
       group             : 'bucket'
@@ -83,6 +124,23 @@ module.exports = (KONFIG, options, credentials) ->
         ]
       healthCheckURLs   : [ "http://localhost:#{KONFIG.kontrol.port}/healthCheck" ]
       versionURL        : "http://localhost:#{KONFIG.kontrol.port}/version"
+      kubernetes        :
+        image           : 'koding/base'
+        command         : " [ \"./run\", \"exec\", \"#{GOBIN_K8S}/kontrol\" ] "
+        mounts          : [ 'koding-working-tree', 'root-kite-volume', 'generated-volume' ]
+        ports						:
+          containerPort : "#{KONFIG.kontrol.port}"
+          hostPort      : "#{KONFIG.kontrol.port}"
+        envVariables    : [
+          {
+            name        : 'KONFIG_KONTROL_MONGOURL'
+            value       : '${MONGO_SERVICE_HOST}:27017/koding'
+          }
+          {
+            name        : 'KONFIG_KONTROL_POSTGRES_HOST'
+            value       : '${POSTGRES_SERVICE_HOST}'
+          }
+        ]
 
     countly             :
       group             : 'webserver'
@@ -116,6 +174,23 @@ module.exports = (KONFIG, options, credentials) ->
         ]
       healthCheckURLs   : [ "http://localhost:#{KONFIG.kloud.port}/healthCheck" ]
       versionURL        : "http://localhost:#{KONFIG.kloud.port}/version"
+      kubernetes        :
+        image           : 'koding/base'
+        command         : " [ \"./run\", \"exec\", \"#{GOBIN_K8S}/kloud\" ] "
+        mounts          : [ 'koding-working-tree', 'root-kite-volume', 'generated-volume' ]
+        ports:
+          containerPort : "#{KONFIG.kloud.port}"
+          hostPort      : "#{KONFIG.kloud.port}"
+        envVariables    : [
+          {
+            name        : 'KONFIG_KLOUD_MONGOURL'
+            value       : '${MONGO_SERVICE_HOST}:27017/koding'
+          }
+          {
+            name        : 'KONFIG_KLOUD_POSTGRES_HOST'
+            value       : '${POSTGRES_SERVICE_HOST}'
+          }
+        ]
 
     terraformer         :
       group             : 'environment'
@@ -123,6 +198,10 @@ module.exports = (KONFIG, options, credentials) ->
         command         : "#{GOBIN}/terraformer"
       healthCheckURLs   : [ "http://localhost:#{KONFIG.terraformer.port}/healthCheck" ]
       versionURL        : "http://localhost:#{KONFIG.terraformer.port}/version"
+      kubernetes        :
+        image           : 'koding/base'
+        command         : " [ \"./run\", \"exec\", \"#{GOBIN_K8S}/terraformer\" ] "
+        mounts          : [ 'koding-working-tree', 'root-kite-volume', 'generated-volume' ]
 
     webserver           :
       group             : 'webserver'
@@ -154,6 +233,31 @@ module.exports = (KONFIG, options, credentials) ->
             auth        : if options.environment is 'sandbox' then yes else no
           }
         ]
+      kubernetes        :
+        image           : 'koding/base'
+        command         : " [ \"./run\", \"exec\", \"#{nodeProgram}\", \"#{KONFIG.projectRoot}/servers/index.js\" ] "
+        mounts          : [ 'koding-working-tree', 'root-kite-volume', 'generated-volume' ]
+        ports						:
+          containerPort : "#{KONFIG.webserver.k8sPort}"
+          hostPort      : "#{KONFIG.webserver.k8sPort}"
+        envVariables    : [
+          {
+            name        : 'KONFIG_REDIS_HOST'
+            value       : '${REDIS_SERVICE_HOST}'
+          }
+          {
+            name        : 'KONFIG_REDIS_URL'
+            value       : '${KONFIG_REDIS_HOST}:6379'
+          }
+          {
+            name        : 'KONFIG_MONGO'
+            value       : '${MONGO_SERVICE_HOST}:27017/koding'
+          }
+          {
+            name        : 'KONFIG_WEBSERVER_PORT'
+            value       : "\"#{KONFIG.webserver.k8sPort}\""
+          }
+        ]
 
     socialworker        :
       group             : 'webserver'
@@ -169,6 +273,27 @@ module.exports = (KONFIG, options, credentials) ->
         ]
       healthCheckURLs   : [ "http://localhost:#{KONFIG.social.port}/healthCheck" ]
       versionURL        : "http://localhost:#{KONFIG.social.port}/version"
+      kubernetes        :
+        image           : 'koding/base'
+        command         : " [ \"./run\", \"exec\", \"#{nodeProgram}\", \"#{KONFIG.projectRoot}/workers/social/index.js\" ] "
+        mounts          : [ 'koding-working-tree', 'root-kite-volume', 'generated-volume' ]
+        ports:
+          containerPort   : "#{KONFIG.social.port}"
+          hostPort        : "#{KONFIG.social.port}"
+        envVariables    : [
+          {
+            name        : 'KONFIG_REDIS_HOST'
+            value       : '${REDIS_SERVICE_HOST}'
+          }
+          {
+            name        : 'KONFIG_REDIS_URL'
+            value       : '${KONFIG_REDIS_HOST}:6379'
+          }
+          {
+            name        : 'KONFIG_MONGO'
+            value       : '${MONGO_SERVICE_HOST}:27017/koding'
+          }
+        ]
 
     emailer             :
       group             : 'webserver'
@@ -176,6 +301,16 @@ module.exports = (KONFIG, options, credentials) ->
       supervisord       :
         command         :
           run           : 'node %(ENV_KONFIG_PROJECTROOT)s/workers/emailer'
+      kubernetes        :
+        image           : 'koding/base'
+        command         : " [ \"./run\", \"exec\", \"#{nodeProgram}\", \"#{KONFIG.projectRoot}/workers/emailer\" ] "
+        mounts          : [ 'koding-working-tree', 'root-kite-volume' ]
+        envVariables    : [
+          {
+            name        : 'KONFIG_MQ_HOST'
+            value       : '${RABBITMQ_SERVICE_HOST)'
+          }
+        ]
 
     notification        :
       group             : 'webserver'
@@ -193,6 +328,31 @@ module.exports = (KONFIG, options, credentials) ->
             location    : '~ /api/social/private/dispatcher/(.*)' # handle dispatcher requests
             proxyPass   : 'http://notification/$1$is_args$args'
             internalOnly: yes
+          }
+        ]
+      kubernetes        :
+        image           : 'koding/base'
+        command         : " [ \"./run\", \"exec\", \"#{nodeProgram}\", \"#{KONFIG.projectRoot}/workers/notification\", \"-p\", \"4560\" ] "
+        mounts          : [ 'koding-working-tree', 'root-kite-volume' ]
+        ports						:
+          containerPort : '4560'
+          hostPort			: '4560'
+        envVariables    : [
+          {
+            name        : 'KONFIG_REDIS_HOST'
+            value       : '${REDIS_SERVICE_HOST}'
+          }
+          {
+            name        : 'KONFIG_REDIS_URL'
+            value       : '${KONFIG_REDIS_HOST}:6379'
+          }
+          {
+            name        : 'KONFIG_MONGO'
+            value       : '${MONGO_SERVICE_HOST}:27017/koding'
+          }
+          {
+            name        : 'KONFIG_MQ_HOST'
+            value       : '${RABBITMQ_SERVICE_HOST}'
           }
         ]
       # if it's required to have more than 1 instance of notification worker
@@ -268,6 +428,14 @@ module.exports = (KONFIG, options, credentials) ->
             internalOnly: yes
           }
         ]
+      kubernetes        :
+        image           : 'koding/base'
+        command         : " [ \"./run\", \"exec\", \"#{GOBIN_K8S}/api\", \"-port=7000\" ] "
+        mounts          : [ 'koding-working-tree', 'root-kite-volume' ]
+        ports						:
+          containerPort : "#{KONFIG.socialapi.port}"
+          hostPort      : "#{KONFIG.socialapi.port}"
+        envVariables    : socialapiEnvVariables
 
     realtime            :
       group             : 'socialapi'
@@ -275,6 +443,11 @@ module.exports = (KONFIG, options, credentials) ->
         command         :
           run           : "#{GOBIN}/realtime"
           watch         : "#{GOBIN}/watcher -run socialapi/workers/cmd/realtime -watch socialapi/workers/realtime"
+      kubernetes        :
+        image           : 'koding/base'
+        command         : " [ \"./run\", \"exec\", \"#{GOBIN_K8S}/realtime\" ] "
+        mounts          : [ 'koding-working-tree', 'root-kite-volume' ]
+        envVariables    : socialapiEnvVariables
 
     presence            :
       group             : 'socialapi'
@@ -282,6 +455,11 @@ module.exports = (KONFIG, options, credentials) ->
         command         :
           run           : "#{GOBIN}/presence"
           watch         : "#{GOBIN}/watcher -run socialapi/workers/cmd/presence -watch socialapi/workers/presence"
+      kubernetes        :
+        image           : 'koding/base'
+        command         : " [ \"./run\", \"exec\", \"#{GOBIN_K8S}/presence\" ] "
+        mounts          : [ 'koding-working-tree', 'root-kite-volume' ]
+        envVariables    : socialapiEnvVariables
 
     collaboration       :
       group             : 'socialapi'
@@ -289,6 +467,11 @@ module.exports = (KONFIG, options, credentials) ->
         command         :
           run           : "#{GOBIN}/collaboration -kite-init=true"
           watch         : "#{GOBIN}/watcher -run socialapi/workers/cmd/collaboration -watch socialapi/workers/collaboration -kite-init=true"
+      kubernetes        :
+        image           : 'koding/base'
+        command         : " [ \"./run\", \"exec\", \"#{GOBIN_K8S}/collaboration\", \"-kite-init=true\" ] "
+        mounts          : [ 'koding-working-tree', 'root-kite-volume' ]
+        envVariables    : socialapiEnvVariables
 
     gatekeeper          :
       group             : 'socialapi'
@@ -305,6 +488,14 @@ module.exports = (KONFIG, options, credentials) ->
           location      : '~ /api/gatekeeper/(.*)'
           proxyPass     : 'http://gatekeeper/$1$is_args$args'
         ]
+      kubernetes        :
+        image           : 'koding/base'
+        command         : " [ \"./run\", \"exec\", \"#{GOBIN_K8S}/gatekeeper\" ] "
+        mounts          : [ 'koding-working-tree', 'root-kite-volume' ]
+        ports						:
+          containerPort : "#{KONFIG.gatekeeper.port}"
+          hostPort      : "#{KONFIG.gatekeeper.port}"
+        envVariables    : socialapiEnvVariables
 
     dispatcher          :
       group             : 'socialapi'
@@ -312,6 +503,11 @@ module.exports = (KONFIG, options, credentials) ->
         command         :
           run           : "#{GOBIN}/dispatcher"
           watch         : 'make -C %(ENV_KONFIG_PROJECTROOT)s/go/src/socialapi dispatcherdev'
+      kubernetes        :
+        image           : 'koding/base'
+        command         : " [ \"./run\", \"exec\", \"#{GOBIN_K8S}/dispatcher\" ] "
+        mounts          : [ 'koding-working-tree', 'root-kite-volume' ]
+        envVariables    : socialapiEnvVariables
 
     mailsender          :
       group             : 'socialapi'
@@ -319,6 +515,11 @@ module.exports = (KONFIG, options, credentials) ->
         command         :
           run           : "#{GOBIN}/emailsender"
           watch         : "#{GOBIN}/watcher -run socialapi/workers/cmd/emailsender -watch socialapi/workers/emailsender"
+      kubernetes        :
+        image           : 'koding/base'
+        command         : " [ \"./run\", \"exec\", \"#{GOBIN_K8S}/emailsender\" ] "
+        mounts          : [ 'koding-working-tree', 'root-kite-volume' ]
+        envVariables    : socialapiEnvVariables
 
     team                :
       group             : 'socialapi'
@@ -326,6 +527,11 @@ module.exports = (KONFIG, options, credentials) ->
         command         :
           run           : "#{GOBIN}/team"
           watch         : "#{GOBIN}/watcher -run socialapi/workers/cmd/team -watch socialapi/workers/team"
+      kubernetes        :
+        image           : 'koding/base'
+        command         : " [ \"./run\", \"exec\", \"#{GOBIN_K8S}/team\" ] "
+        mounts          : [ 'koding-working-tree', 'root-kite-volume' ]
+        envVariables    : socialapiEnvVariables
 
     tunnelproxymanager  :
       group             : 'proxy'
@@ -348,6 +554,14 @@ module.exports = (KONFIG, options, credentials) ->
             proxyPass   : 'http://tunnelserver/$1'
           }
         ]
+      kubernetes        :
+        image           : 'koding/base'
+        command         : " [ \"./run\", \"exec\", \"#{GOBIN_K8S}/tunnelserver\" ] "
+        mounts          : [ 'koding-working-tree', 'root-kite-volume' ]
+        ports						:
+          containerPort : "#{KONFIG.tunnelserver.port}"
+          hostPort      : "#{KONFIG.tunnelserver.port}"
+        envVariables    : socialapiEnvVariables
 
     userproxies         :
       group             : if options.environment is 'default' then 'webserver' else 'proxy'
