@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: workers-build
+  namespace: koding
+spec:
+  restartPolicy: Never
+  containers:
+    - name: build
+      image: koding/base
+      env:
+      - name: KONFIG_MONGO
+        value: $(MONGO_SERVICE_HOST):27017/koding
+      - name: KONFIG_MQ_LOGIN
+        value: test
+      - name: KONFIG_MQ_PASSWORD
+        value: test
+      - name: KONFIG_MQ_HOST
+        value: $(RABBITMQ_SERVICE_HOST)
+      - name: KONFIG_POSTGRES_HOST
+        value: $(POSTGRES_SERVICE_HOST)
+      - name: KONFIG_REDIS_HOST
+        value: $(REDIS_SERVICE_HOST)
+      ports:
+        - containerPort: 8090
+          hostPort: 8090
+      workingDir: /opt/koding
+      command: [ "scripts/bootstrap-container", "k8s_build" ]
+      volumeMounts:
+        - mountPath: /opt/koding
+          name: koding-working-tree
+        - mountPath: /root/.kite/
+          name: kite-key-volume
+        - mountPath: /opt/koding/generated
+          name: keys-volume
+
+  volumes:
+    - name: keys-volume
+      hostPath:
+        path: ${PWD}/generated
+    - name: kite-key-volume
+      hostPath:
+        path: ${HOME}/.kite/
+    - name: koding-working-tree
+      hostPath:
+        path: ${PWD}
