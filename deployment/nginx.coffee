@@ -15,6 +15,10 @@ createUpstreams = (KONFIG) ->
       servers += '\n' if servers isnt ''
       port = parseInt(port, 10)
 
+      if name is 'webserver' and options.kubernetes.ports?
+        webserverPort = parseInt(options.kubernetes.ports.containerPort, 10)
+        servers += "\tserver 127.0.0.1:#{webserverPort + index} max_fails=3 fail_timeout=10s;\n"
+
       servers += "\tserver 127.0.0.1:#{port + index} max_fails=3 fail_timeout=10s;"
 
     upstreams += """
