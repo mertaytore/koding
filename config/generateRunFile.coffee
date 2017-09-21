@@ -486,14 +486,17 @@ generateDev = (KONFIG, options) ->
       export BUILD_POD_NAME="workers-build"
       ${KONFIG_PROJECTROOT}/scripts/k8s-utilities.sh check_pod_state $BUILD_POD_NAME Pending
 
-      ${KONFIG_PROJECTROOT}/scripts/k8s-utilities.sh create_rmq_test_user
+      #${KONFIG_PROJECTROOT}/scripts/k8s-utilities.sh create_rmq_test_user
 
       ${KONFIG_PROJECTROOT}/scripts/k8s-utilities.sh check_pod_state $BUILD_POD_NAME Running Succeeded
 
-      ${KONFIG_PROJECTROOT}/scripts/k8s-utilities.sh create_k8s_resource $BACKEND_DIR
-      export BACKEND_POD_NAME="backend"
-      ${KONFIG_PROJECTROOT}/scripts/k8s-utilities.sh check_pod_state $BACKEND_POD_NAME Pending
-
+      #${KONFIG_PROJECTROOT}/scripts/k8s-utilities.sh create_k8s_resource $BACKEND_DIR
+      #export BACKEND_POD_NAME="backend"
+      #${KONFIG_PROJECTROOT}/scripts/k8s-utilities.sh check_pod_state $BACKEND_POD_NAME Pending
+      ${KONFIG_PROJECTROOT}/scripts/k8s-utilities.sh create_k8s_resource ${KONFIG_PROJECTROOT}/deployment/kubernetes/backend-pod/services -R
+      sleep 10
+      ${KONFIG_PROJECTROOT}/scripts/k8s-utilities.sh create_k8s_resource ${KONFIG_PROJECTROOT}/deployment/kubernetes/backend-pod/deployments -R
+      
       echo "all services are ready..."
     }
 
