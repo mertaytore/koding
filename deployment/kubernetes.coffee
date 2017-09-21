@@ -14,6 +14,23 @@ generatePodDef = (podName) ->
       containers    : []
 
   return podHeader
+  
+generateDeploymentDef = (deploymentName) ->
+  deploymentHeader =
+    apiVersion      : 'extensions/v1beta1'
+    kind            : 'Deployment'
+    metadata        :
+      name          : deploymentName
+      namespace     : 'koding'
+    spec            :
+      template      :
+        metadata    :
+          labels    :
+            service : deploymentName
+        spec        :
+         containers : []
+
+  return deploymentHeader
 
 generateContainerSection = (app, options = {}) ->
 
@@ -30,17 +47,14 @@ generateContainerSection = (app, options = {}) ->
 
 generatePortsSection = (options) ->
   return [ {
-    containerPort: parseInt(options.ports.incoming, 10),
-    hostPort: parseInt(options.ports.incoming, 10)
+    containerPort: parseInt(options.ports.incoming, 10)
+    #hostPort: parseInt(options.ports.incoming, 10)
   } ]
 
 generateVolumesSection = (KONFIG, options) ->
-  return [
-    { name: 'koding-working-tree', hostPath: { path: options.volumeDir } }
-    { name: 'assets', hostPath: { path: options.volumeDir + '/website' } }
-  ]
+  return KONFIG.k8s_volumes
 
-module.exports.create = (KONFIG, options) ->
+module.exports.createBackendPod = (KONFIG, options) ->
   KONFIG.kubernetesConf = generatePodDef('backend')
 
   for name, workerOptions of KONFIG.workers when workerOptions.kubernetes?.command?
@@ -53,6 +67,15 @@ module.exports.create = (KONFIG, options) ->
   KONFIG.kubernetesConf.spec.volumes = generateVolumesSection KONFIG, options
 
   return YAML.stringify(KONFIG.kubernetesConf, 4)
+
+module.exports.createWorkerDeployment = (KONFIG, name, options, workerOptions) ->
+  KONFIG.workerK8sDeployment[name] = generateDeploymentDef(name)
+
+  KONFIG.workerK8sDeployment[name].spec.template.spec.containers.push generateContainerSection name, workerOptions
+
+  KONFIG.workerK8sDeployment[name].spec.template.spec.volumes = generateVolumesSection KONFIG, options
+
+  return YAML.stringify(KONFIG.workerK8sDeployment[name], 4)
 
 module.exports.createBuildPod = (KONFIG, options) ->
   buildContainer =
@@ -98,3 +121,19 @@ module.exports.createClientPod = (KONFIG, options) ->
   KONFIG.clientPodConf.spec.volumes = generateVolumesSection KONFIG, options
 
   return YAML.stringify(KONFIG.clientPodConf, 4)
+  
+module.exports.createWorkerServices = (name, options) ->
+	serviceConf =
+    apiVersion      : 'v1'
+    kind            : 'Service'
+    metadata        :
+      name          : name
+      namespace     : 'koding'
+    spec            :
+      type          : 'NodePort'
+      ports         :
+      	[ { name: '', port: parseInt(options.ports.incoming, 10), protocol: 'TCP', targetPort: parseInt(options.ports.incoming, 10) } ]
+      selector      :
+      	service     : name
+
+  return YAML.stringify(serviceConf, 4)
