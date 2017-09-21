@@ -84,6 +84,7 @@ Configuration = (options = {}) ->
   (require './inheritOptionFlags') credentials, options
   KONFIG = require('./generateKonfig')(options, credentials)
   (require './inheritEnvVars') KONFIG  if options.inheritEnvVars
+  KONFIG.kontrol.url = "http://kontrol/kontrol/kite"
   KONFIG.workers = require('./workers')(KONFIG, options, credentials)
   KONFIG.client.runtimeOptions = require('./generateRuntimeConfig')(KONFIG, credentials, options)
 
@@ -104,11 +105,17 @@ Configuration = (options = {}) ->
     sh: (require './generateShellEnv').create KONFIG, options
     json: JSON.stringify KONFIG, null, 2
 
+  KONFIG.workerK8sDeployment = {}
   KONFIG.supervisorConf = (require '../deployment/supervisord.coffee').create KONFIG
+
   if options.kubernetes
-    KONFIG.kubernetesConf = (require '../deployment/kubernetes.coffee').create KONFIG, options
     KONFIG.buildPodConf = (require '../deployment/kubernetes.coffee').createBuildPod KONFIG, options
     KONFIG.clientPodConf = (require '../deployment/kubernetes.coffee').createClientPod KONFIG, options
+    for name, options of KONFIG.workers when options.ports?.incoming?
+      fs.writeFileSync "./deployment/kubernetes/backend-pod/services/#{name}-svc.yaml", (require '../deployment/kubernetes.coffee').createWorkerServices name, options
+    for name, workerOptions of KONFIG.workers when workerOptions.kubernetes?.command?
+      if isAllowed workerOptions.group, KONFIG.ebEnvName
+        fs.writeFileSync "./deployment/kubernetes/backend-pod/deployments/#{name}-deployment.yaml", (require '../deployment/kubernetes.coffee').createWorkerDeployment KONFIG, name, options, workerOptions
   KONFIG.nginxConf = (require '../deployment/nginx.coffee').create KONFIG, options.environment
   KONFIG.runFile = (require './generateRunFile').dev KONFIG, options
   KONFIG.configCheckExempt = []
