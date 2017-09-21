@@ -12,6 +12,11 @@ module.exports = (KONFIG, options, credentials) ->
       { mountPath: '/opt/koding', name: 'koding-working-tree' }
     nginxAssets:
       { mountPath: '/usr/share/nginx/html', name: 'assets' }
+      
+  KONFIG.k8s_volumes = [
+    { name: KONFIG.k8s_mounts.workingTree.name, hostPath: { path: options.volumeDir } }
+    { name: KONFIG.k8s_mounts.nginxAssets.name, hostPath: { path: options.volumeDir + '/website' } }
+  ]
 
   workers =
     nginx               :
