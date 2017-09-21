@@ -1,0 +1,9 @@
+FROM rabbitmq:3-management
+
+ENV RABBITMQ_USER test
+ENV RABBITMQ_PASSWORD test
+
+ADD init.sh /init.sh
+EXPOSE 15672
+
+ENTRYPOINT ["/init.sh"]
