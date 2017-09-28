@@ -48,7 +48,7 @@ generateContainerSection = (app, options = {}) ->
 generatePortsSection = (options) ->
   return [ {
     containerPort: parseInt(options.ports.incoming, 10)
-    #hostPort: parseInt(options.ports.incoming, 10)
+    hostPort: parseInt(options.ports.incoming, 10)
   } ]
 
 generateVolumesSection = (KONFIG, options) ->

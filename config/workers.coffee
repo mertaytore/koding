@@ -150,7 +150,7 @@ module.exports = (KONFIG, options, credentials) ->
       versionURL        : "http://localhost:#{KONFIG.terraformer.port}/version"
       kubernetes        :
         image           : 'koding/base'
-        command         : [ './run', 'exec', 'go/bin/terraformer' ]
+        command         : [ './run', 'exec', 'go/bin/terraformer', '-kontrolurl=http://kontrol:3000/kite' ]
         mounts          : [ KONFIG.k8s_mounts.workingTree ]
 
     webserver           :
@@ -369,7 +369,7 @@ module.exports = (KONFIG, options, credentials) ->
         ]
       kubernetes        :
         image           : 'koding/base'
-        command         : [ './run', 'exec', 'go/bin/gatekeeper' ]
+        command         : [ './run', 'exec', 'go/bin/gatekeeper', '-host=gatekeeper' ]
         mounts          : [ KONFIG.k8s_mounts.workingTree ]
 
     dispatcher          :

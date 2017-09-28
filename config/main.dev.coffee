@@ -84,7 +84,6 @@ Configuration = (options = {}) ->
   (require './inheritOptionFlags') credentials, options
   KONFIG = require('./generateKonfig')(options, credentials)
   (require './inheritEnvVars') KONFIG  if options.inheritEnvVars
-  KONFIG.kontrol.url = "http://kontrol/kontrol/kite"
   KONFIG.workers = require('./workers')(KONFIG, options, credentials)
   KONFIG.client.runtimeOptions = require('./generateRuntimeConfig')(KONFIG, credentials, options)
 
