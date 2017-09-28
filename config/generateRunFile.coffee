@@ -489,13 +489,48 @@ generateDev = (KONFIG, options) ->
       #${KONFIG_PROJECTROOT}/scripts/k8s-utilities.sh create_rmq_test_user
 
       ${KONFIG_PROJECTROOT}/scripts/k8s-utilities.sh check_pod_state $BUILD_POD_NAME Running Succeeded
+      sleep 2
+      ${KONFIG_PROJECTROOT}/scripts/k8s-utilities.sh create_k8s_resource ${KONFIG_PROJECTROOT}/deployment/kubernetes/backend-pod/deployments/collaboration-deployment.yaml
+      ${KONFIG_PROJECTROOT}/scripts/k8s-utilities.sh create_k8s_resource ${KONFIG_PROJECTROOT}/deployment/kubernetes/backend-pod/deployments/dispatcher-deployment.yaml
+      ${KONFIG_PROJECTROOT}/scripts/k8s-utilities.sh create_k8s_resource ${KONFIG_PROJECTROOT}/deployment/kubernetes/backend-pod/deployments/gatekeeper-deployment.yaml
+      ${KONFIG_PROJECTROOT}/scripts/k8s-utilities.sh create_k8s_resource ${KONFIG_PROJECTROOT}/deployment/kubernetes/backend-pod/deployments/kloud-deployment.yaml
+      ${KONFIG_PROJECTROOT}/scripts/k8s-utilities.sh create_k8s_resource ${KONFIG_PROJECTROOT}/deployment/kubernetes/backend-pod/deployments/kontrol-deployment.yaml
+      ${KONFIG_PROJECTROOT}/scripts/k8s-utilities.sh create_k8s_resource ${KONFIG_PROJECTROOT}/deployment/kubernetes/backend-pod/deployments/mailsender-deployment.yaml
+      ${KONFIG_PROJECTROOT}/scripts/k8s-utilities.sh create_k8s_resource ${KONFIG_PROJECTROOT}/deployment/kubernetes/backend-pod/deployments/presence-deployment.yaml
+      ${KONFIG_PROJECTROOT}/scripts/k8s-utilities.sh create_k8s_resource ${KONFIG_PROJECTROOT}/deployment/kubernetes/backend-pod/deployments/realtime-deployment.yaml
+      ${KONFIG_PROJECTROOT}/scripts/k8s-utilities.sh create_k8s_resource ${KONFIG_PROJECTROOT}/deployment/kubernetes/backend-pod/deployments/socialapi-deployment.yaml
+      ${KONFIG_PROJECTROOT}/scripts/k8s-utilities.sh create_k8s_resource ${KONFIG_PROJECTROOT}/deployment/kubernetes/backend-pod/deployments/socialworker-deployment.yaml
+      ${KONFIG_PROJECTROOT}/scripts/k8s-utilities.sh create_k8s_resource ${KONFIG_PROJECTROOT}/deployment/kubernetes/backend-pod/deployments/team-deployment.yaml
+      ${KONFIG_PROJECTROOT}/scripts/k8s-utilities.sh create_k8s_resource ${KONFIG_PROJECTROOT}/deployment/kubernetes/backend-pod/deployments/terraformer-deployment.yaml
+      ${KONFIG_PROJECTROOT}/scripts/k8s-utilities.sh create_k8s_resource ${KONFIG_PROJECTROOT}/deployment/kubernetes/backend-pod/deployments/webserver-deployment.yaml
+      sleep 10
+      ${KONFIG_PROJECTROOT}/scripts/k8s-utilities.sh create_k8s_resource ${KONFIG_PROJECTROOT}/deployment/kubernetes/backend-pod/services -R
+      
+      export KONTROL_PUB_IP=$(kubectl get ep -n koding -o jsonpath='{.items[?(@.metadata.name == "kontrol")].subsets[0].addresses[0].ip}')
+      sed --in-place --expression 's@kontrol:3000@'"$KONTROL_PUB_IP"':3000@' nginx.conf
+      
+      export KLOUD_PUB_IP=$(kubectl get ep -n koding -o jsonpath='{.items[?(@.metadata.name == "kloud")].subsets[0].addresses[0].ip}')
+      sed --in-place --expression 's@kloud:5500@'"$KLOUD_PUB_IP"':5500@' nginx.conf 
+      
+      export WEBSERVER_PUB_IP=$(kubectl get ep -n koding -o jsonpath='{.items[?(@.metadata.name == "webserver")].subsets[0].addresses[0].ip}')
+      sed --in-place --expression 's@webserver:8040@'"$WEBSERVER_PUB_IP"':8040@' nginx.conf 
+      
+      export SOCIALWORKER_PUB_IP=$(kubectl get ep -n koding -o jsonpath='{.items[?(@.metadata.name == "socialworker")].subsets[0].addresses[0].ip}')
+      sed --in-place --expression 's@socialworker:3030@'"$SOCIALWORKER_PUB_IP"':3030@' nginx.conf 
+      
+      export SOCIALAPI_PUB_IP=$(kubectl get ep -n koding -o jsonpath='{.items[?(@.metadata.name == "socialapi")].subsets[0].addresses[0].ip}')
+      sed --in-place --expression 's@socialapi:7000@'"$SOCIALAPI_PUB_IP"':7000@' nginx.conf 
+      
+      export GATEKEEPER_PUB_IP=$(kubectl get ep -n koding -o jsonpath='{.items[?(@.metadata.name == "gatekeeper")].subsets[0].addresses[0].ip}')
+      sed --in-place --expression 's@gatekeeper:7200@'"$GATEKEEPER_PUB_IP"':7200@' nginx.conf
 
       #${KONFIG_PROJECTROOT}/scripts/k8s-utilities.sh create_k8s_resource $BACKEND_DIR
       #export BACKEND_POD_NAME="backend"
       #${KONFIG_PROJECTROOT}/scripts/k8s-utilities.sh check_pod_state $BACKEND_POD_NAME Pending
-      ${KONFIG_PROJECTROOT}/scripts/k8s-utilities.sh create_k8s_resource ${KONFIG_PROJECTROOT}/deployment/kubernetes/backend-pod/services -R
+      #${KONFIG_PROJECTROOT}/scripts/k8s-utilities.sh create_k8s_resource ${KONFIG_PROJECTROOT}/deployment/kubernetes/backend-pod/services -R
       sleep 10
-      ${KONFIG_PROJECTROOT}/scripts/k8s-utilities.sh create_k8s_resource ${KONFIG_PROJECTROOT}/deployment/kubernetes/backend-pod/deployments -R
+      ${KONFIG_PROJECTROOT}/scripts/k8s-utilities.sh create_k8s_resource ${KONFIG_PROJECTROOT}/deployment/kubernetes/backend-pod/deployments/nginx-deployment.yaml
+      #${KONFIG_PROJECTROOT}/scripts/k8s-utilities.sh create_k8s_resource ${KONFIG_PROJECTROOT}/deployment/kubernetes/backend-pod/deployments -R
       
       echo "all services are ready..."
     }
