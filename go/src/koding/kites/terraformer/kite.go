@@ -73,4 +73,3 @@ func setupKite(cfg *kitecfg.Config, conf *Config) {
 	if conf.KontrolURL != "" {
 		cfg.KontrolURL = conf.KontrolURL
 	}
-}

@@ -52,7 +52,7 @@ func main() {
 		fmt.Println(stack.VERSION)
 		os.Exit(0)
 	}
-
+	
 	k, err := kloud.New(&cfg)
 	if err != nil {
 		log.Fatal(err)
