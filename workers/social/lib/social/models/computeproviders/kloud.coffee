@@ -123,7 +123,7 @@ module.exports = class Kloud extends Base
   do ->
 
     options               =
-      url                 : "http://localhost:#{KONFIG.publicPort}/kloud/kite"
+      url                 : "http://mertaytore.koding.team:#{KONFIG.publicPort}/kloud/kite"
       autoConnect         : yes
       autoReconnect       : yes
       transportClass      : SockJs
