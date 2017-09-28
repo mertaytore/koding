@@ -2,6 +2,9 @@ fs                     = require 'fs'
 { isAllowed, isProxy } = require './grouptoenvmapping'
 { createCountlyNginxServer } = require './countly/generateConfig'
 _ = require 'lodash'
+#child_process = require("child_process")
+
+
 
 createUpstreams = (KONFIG) ->
 
@@ -14,13 +17,15 @@ createUpstreams = (KONFIG) ->
     for index in [0...options.instances]
       servers += '\n' if servers isnt ''
       port = parseInt(port, 10)
-
-      servers += "\tserver #{name}:#{port + index} max_fails=3 fail_timeout=10s;"
-
-    upstreams += """
-      upstream #{name} {
-    #{servers}
-      }\n\n"""
+      if name isnt "nginx" and name isnt "tunnelserver"
+      	servers += "\tserver #{name}:#{port + index} max_fails=3 fail_timeout=10s;"
+      if name is "tunnelserver"
+      	servers += "\tserver 127.0.0.1:#{port + index} max_fails=3 fail_timeout=10s;"
+    if name isnt "nginx"
+      upstreams += """
+        upstream #{name} {
+      #{servers}
+        }\n\n"""
 
   return upstreams
 
