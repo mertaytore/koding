@@ -455,6 +455,9 @@ post = (url, data, callback) ->
     url    : "#{localDomain}#{url}"
     json   : true
     method : 'POST'
+  
+  console.log "#{localDomain}#{url}"
+  console.log JSON.stringify { url, data }, null, 2
 
   { reqOptions, data } = setCookieIfRequired reqOptions, data
   { reqOptions, data } = setHeaderIfRequired reqOptions, data

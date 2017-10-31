@@ -26,7 +26,7 @@ permittedRequest = (opts) ->
     success: requester opts
 
 requester = ({ fnName, validate }) ->
-  return (client, options = {}, callback) ->
+  return (client, options = {'id'}, callback) ->
     if validate?.length > 0
       errs = []
       for property in validate

@@ -156,7 +156,7 @@ createGroupKallback = (client, req, res, body) ->
 
   # returning a callback function
   return (err, result) ->
-
+    console.log 'testt'
     return res.status(400).send getErrorMessage err  if err?
 
     { # companyName, team name, basically a title, can be changed
