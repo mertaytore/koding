@@ -486,7 +486,7 @@ generateDev = (KONFIG, options) ->
       export BUILD_POD_NAME="workers-build"
       ${KONFIG_PROJECTROOT}/scripts/k8s-utilities.sh check_pod_state $BUILD_POD_NAME Pending
 
-      #${KONFIG_PROJECTROOT}/scripts/k8s-utilities.sh create_rmq_test_user
+      ${KONFIG_PROJECTROOT}/scripts/k8s-utilities.sh create_rmq_test_user
 
       ${KONFIG_PROJECTROOT}/scripts/k8s-utilities.sh check_pod_state $BUILD_POD_NAME Running Succeeded
       sleep 2
@@ -498,8 +498,8 @@ generateDev = (KONFIG, options) ->
       ${KONFIG_PROJECTROOT}/scripts/k8s-utilities.sh create_k8s_resource ${KONFIG_PROJECTROOT}/deployment/kubernetes/backend-pod/deployments/mailsender-deployment.yaml
       ${KONFIG_PROJECTROOT}/scripts/k8s-utilities.sh create_k8s_resource ${KONFIG_PROJECTROOT}/deployment/kubernetes/backend-pod/deployments/presence-deployment.yaml
       ${KONFIG_PROJECTROOT}/scripts/k8s-utilities.sh create_k8s_resource ${KONFIG_PROJECTROOT}/deployment/kubernetes/backend-pod/deployments/realtime-deployment.yaml
-      ${KONFIG_PROJECTROOT}/scripts/k8s-utilities.sh create_k8s_resource ${KONFIG_PROJECTROOT}/deployment/kubernetes/backend-pod/deployments/socialapi-deployment.yaml
-      ${KONFIG_PROJECTROOT}/scripts/k8s-utilities.sh create_k8s_resource ${KONFIG_PROJECTROOT}/deployment/kubernetes/backend-pod/deployments/socialworker-deployment.yaml
+      # ${KONFIG_PROJECTROOT}/scripts/k8s-utilities.sh create_k8s_resource ${KONFIG_PROJECTROOT}/deployment/kubernetes/backend-pod/deployments/socialapi-deployment.yaml
+      # ${KONFIG_PROJECTROOT}/scripts/k8s-utilities.sh create_k8s_resource ${KONFIG_PROJECTROOT}/deployment/kubernetes/backend-pod/deployments/socialworker-deployment.yaml
       ${KONFIG_PROJECTROOT}/scripts/k8s-utilities.sh create_k8s_resource ${KONFIG_PROJECTROOT}/deployment/kubernetes/backend-pod/deployments/team-deployment.yaml
       ${KONFIG_PROJECTROOT}/scripts/k8s-utilities.sh create_k8s_resource ${KONFIG_PROJECTROOT}/deployment/kubernetes/backend-pod/deployments/terraformer-deployment.yaml
       ${KONFIG_PROJECTROOT}/scripts/k8s-utilities.sh create_k8s_resource ${KONFIG_PROJECTROOT}/deployment/kubernetes/backend-pod/deployments/webserver-deployment.yaml
